@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSA for Backend — Backend Blueprint</title>
+<meta name="description" content="Only the data structures a backend developer actually needs: Big-O, hash tables, stacks, queues, search trees, arrays vs linked lists — all visualized.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230f2e66'/><circle cx='9' cy='16' r='3.4' fill='%23ffb224'/><circle cx='23' cy='9' r='3' fill='none' stroke='%23a8c3f0' stroke-width='2'/><circle cx='23' cy='23' r='3' fill='none' stroke='%23a8c3f0' stroke-width='2'/><path d='M12 15l8-5M12 17l8 5' stroke='%23a8c3f0' stroke-width='2'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">
+        <svg width="18" height="18" viewBox="0 0 32 32"><circle cx="9" cy="16" r="3.4" fill="#ffb224"/><circle cx="23" cy="9" r="3" fill="none" stroke="#a8c3f0" stroke-width="2"/><circle cx="23" cy="23" r="3" fill="none" stroke="#a8c3f0" stroke-width="2"/><path d="M12 15l8-5M12 17l8 5" stroke="#a8c3f0" stroke-width="2"/></svg>
+      </span>
+      <span>Backend Blueprint<small>learn it by watching it run</small></span>
+    </a>
+    <button class="nav-toggle" aria-label="Menu">MENU</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="learn.html">Backend Core</a>
+      <a href="dsa.html">DSA for Backend</a>
+      <a href="advanced.html">Security &amp; Ops</a>
+      <a href="game.html">Arcade</a>
+      <a href="faq.html">FAQ</a>
+    </div>
+    <span class="nav-progress" data-nav-progress></span>
+  </div>
+</nav>
+
+<header class="section" style="padding-bottom:36px;">
+  <div class="wrap">
+    <div class="eyebrow">PART II · FIGS. 10–14 · THE SHORT LIST</div>
+    <h1>Only the DSA you'll actually use</h1>
+    <p class="lead">You don't need 300 LeetCode problems to build backends. You need five ideas — because each one is silently running inside every database, cache and web framework you'll ever touch.</p>
+  </div>
+</header>
+
+<!-- ============ FIG 10 · BIG-O ============ -->
+<section class="section" id="bigo">
+  <div class="wrap lesson">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">DSA 01</div>
+      <h3>Big-O: the cost forecast</h3>
+      <p>Big-O answers one question: <em>when my data grows, how fast does my work grow?</em> It ignores constants and asks only about the shape of the curve.</p>
+      <p>Backend translation: <code>O(1)</code> is a cache/hash lookup, <code>O(log n)</code> is an index seek, <code>O(n)</code> is a full table scan, <code>O(n²)</code> is the nested loop that works in the demo and melts in production.</p>
+      <div class="takeaway"><b>Try:</b> drag from 10 to 1,000,000 rows. O(1) and O(log n) barely flinch. O(n²) exits the known universe.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 10</span><span class="fig-title">Operations vs data size</span>
+        <span class="fig-note">n = <span id="bigo-n">1,000</span> rows</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <span class="label">Rows</span>
+          <input type="range" id="bigo-slider" min="1" max="6" step="0.05" value="3" style="width:220px;">
+        </div>
+        <div id="bigo-rows" style="display:grid; gap:12px;"></div>
+        <div class="fig-stats"><span class="stat-chip" id="bigo-note">at 1 op/µs, O(n²) here takes <b>~17 min</b></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — how Big-O shows up in real code</summary>
+      <div class="deep-body">
+        <p>You rarely compute Big-O on paper. You <em>choose a data structure</em>, and its Big-O comes along. The trap below is the most common accidental O(n²) in backend code.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Node.js</button>
+          <button class="code-tab" data-lang="go">Go</button>
+        </div>
+<pre class="code is-on" data-lang="node">// Task: for each order, attach its user. Two ways, wildly different cost.
+
+// ❌ O(n × m) — .find scans the whole users array for EVERY order.
+// 10k orders × 10k users = 100,000,000 comparisons. Melts in prod.
+const slow = orders.map(o =&gt;
+  ({ ...o, user: users.find(u =&gt; u.id === o.userId) })
+);
+
+// ✅ O(n + m) — build a hash index once, then O(1) lookups.
+const byId = new Map(users.map(u =&gt; [u.id, u]));   // one pass
+const fast = orders.map(o =&gt;
+  ({ ...o, user: byId.get(o.userId) })             // O(1) each
+);
+
+// Same idea inside the DB: a JOIN on an indexed column is the fast path;
+// a JOIN with no index is the slow, nested-loop version.</pre>
+<pre class="code" data-lang="go">// ❌ O(n × m): linear search per order
+for _, o := range orders {
+	for _, u := range users { // scans every user, every time
+		if u.ID == o.UserID {
+			o.User = u
+			break
+		}
+	}
+}
+
+// ✅ O(n + m): index into a map first, then O(1) lookups
+byID := make(map[string]User, len(users))
+for _, u := range users {
+	byID[u.ID] = u // one pass to build
+}
+for i := range orders {
+	orders[i].User = byID[orders[i].UserID] // O(1)
+}</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes">The whole skill is spotting a loop-inside-a-loop over data and replacing the inner loop with a <b>map lookup</b>. Backend translation: the same pattern is a database <b>JOIN on an indexed column</b> vs an un-indexed one. When in doubt, <b>measure</b> — <code>console.time()</code> in Node, <code>testing.B</code> benchmarks in Go — and try it at 10× the data you expect.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 11 · HASH TABLE ============ -->
+<section class="section" id="hash">
+  <div class="wrap lesson flip">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">DSA 02</div>
+      <h3>Hash tables: the O(1) machine</h3>
+      <p>Take a key, run it through a hash function, get a bucket number, go straight there. No searching — <em>computing</em> the location. This one trick powers dictionaries, Redis, session stores, DB hash indexes and your cache from FIG. 05.</p>
+      <p>Two keys can land in the same bucket — a <b>collision</b>. The standard fix is chaining: each bucket holds a small list. As buckets fill up, real implementations resize and re-hash everything.</p>
+      <div class="takeaway"><b>Try:</b> insert <code>cart</code> and <code>user</code>-like keys until two collide, then look one up and watch it walk the chain.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 11</span><span class="fig-title">8-bucket hash table · chaining</span>
+        <span class="fig-note" id="hash-note">hash(key) % 8 → bucket</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <input type="text" id="hash-key" placeholder="type a key… e.g. user:42" maxlength="18" style="width:180px;">
+          <button class="btn btn-chalk" id="hash-insert">INSERT</button>
+          <button class="btn btn-chalk" id="hash-lookup">LOOKUP</button>
+          <button class="btn btn-chalk" id="hash-clear">↺</button>
+        </div>
+        <div class="fig-log" id="hash-math" style="min-height:52px; max-height:80px; margin-bottom:12px;"></div>
+        <div id="hash-buckets" style="display:grid; gap:8px;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — hash maps you'll use every day</summary>
+      <div class="deep-body">
+        <p>You almost never implement a hash table — the language gives you one. But knowing it's O(1) tells you <em>when to reach for it</em>: de-duping, counting, grouping, caching, lookups.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Node.js (Map)</button>
+          <button class="code-tab" data-lang="go">Go (map)</button>
+        </div>
+<pre class="code is-on" data-lang="node">// The built-in hash tables: Map (any key) and plain objects (string keys)
+const cache = new Map();
+cache.set("user:42", { name: "Ada" });  // O(1) insert
+cache.get("user:42");                    // O(1) lookup
+cache.has("user:42");                    // O(1)
+cache.delete("user:42");                 // O(1)
+
+// Count occurrences — O(n) total, O(1) per item
+const counts = new Map();
+for (const tag of tags)
+  counts.set(tag, (counts.get(tag) ?? 0) + 1);
+
+// De-duplicate a list in O(n) using a Set (a keys-only hash table)
+const unique = [...new Set(ids)];
+
+// Group orders by user — the "index" pattern from the Big-O section
+const byUser = new Map();
+for (const o of orders)
+  (byUser.get(o.userId) ?? byUser.set(o.userId, []).get(o.userId)).push(o);</pre>
+<pre class="code" data-lang="go">// Go's built-in map is a hash table
+cache := make(map[string]User)
+cache["user:42"] = User{Name: "Ada"} // O(1) insert
+u, ok := cache["user:42"]             // O(1) lookup; ok = was it present?
+delete(cache, "user:42")             // O(1)
+
+// Count occurrences
+counts := make(map[string]int)
+for _, tag := range tags {
+	counts[tag]++ // missing keys read as zero — no init needed
+}
+
+// De-duplicate using a set (map to empty struct = zero memory per value)
+seen := make(map[string]struct{})
+var unique []string
+for _, id := range ids {
+	if _, dup := seen[id]; !dup {
+		seen[id] = struct{}{}
+		unique = append(unique, id)
+	}
+}</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes">Redis is "a hash table as a network service" — the cache and rate-limiter modules are this structure, shared across all your servers. Caveats: map iteration order is <b>not guaranteed</b> (Go randomizes it on purpose); a plain Go <code>map</code> is <b>not safe for concurrent writes</b> — use <code>sync.Map</code> or a mutex. Hash lookups are O(1) <em>on average</em>; a pathological set of colliding keys degrades to O(n), which is why real implementations resize.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 12 · STACK & QUEUE ============ -->
+<section class="section" id="stackqueue">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">DSA 03</div>
+      <h2>Stacks &amp; queues: order is everything</h2>
+      <p class="lead">Same data, opposite discipline. A <b>stack</b> is LIFO — last in, first out: it's literally how your language runs function calls. A <b>queue</b> is FIFO — first in, first out: it's the job queue from FIG. 07 and every "fair" waiting line in computing.</p>
+    </div>
+    <div class="grid-2">
+      <div class="fig reveal">
+        <div class="fig-head"><span class="fig-no">FIG. 12A</span><span class="fig-title">Stack · LIFO · the call stack</span></div>
+        <div class="fig-body">
+          <div class="fig-controls">
+            <button class="btn btn-chalk" id="stack-push">PUSH call()</button>
+            <button class="btn btn-chalk" id="stack-pop">POP return</button>
+          </div>
+          <div id="stack-viz" style="display:flex; flex-direction:column-reverse; gap:6px; min-height:190px; justify-content:flex-start; width:190px;"></div>
+          <div class="fig-stats"><span class="stat-chip" id="stack-note">push main() to start</span></div>
+        </div>
+      </div>
+      <div class="fig reveal">
+        <div class="fig-head"><span class="fig-no">FIG. 12B</span><span class="fig-title">Queue · FIFO · the job line</span></div>
+        <div class="fig-body">
+          <div class="fig-controls">
+            <button class="btn btn-chalk" id="fifo-enq">ENQUEUE job</button>
+            <button class="btn btn-chalk" id="fifo-deq">DEQUEUE → worker</button>
+          </div>
+          <div class="cell-row" id="fifo-viz" style="min-height:190px; align-content:flex-start;"></div>
+          <div class="fig-stats"><span class="stat-chip" id="fifo-note">oldest job leaves first — nobody cuts the line</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — stacks &amp; queues in practice</summary>
+      <div class="deep-body">
+        <p>Both are one-liners on top of a dynamic array. You'll use a stack for undo/parsing/traversal, and a queue for job processing and breadth-first walks.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Node.js</button>
+          <button class="code-tab" data-lang="go">Go</button>
+        </div>
+<pre class="code is-on" data-lang="node">// STACK (LIFO) — just an array with push/pop, both O(1)
+const stack = [];
+stack.push("a"); stack.push("b");
+stack.pop();            // "b" — last in, first out
+
+// Real use: validate balanced brackets in a config/expression
+function balanced(s) {
+  const st = [], pairs = { ")": "(", "]": "[", "}": "{" };
+  for (const ch of s) {
+    if ("([{".includes(ch)) st.push(ch);
+    else if (ch in pairs &amp;&amp; st.pop() !== pairs[ch]) return false;
+  }
+  return st.length === 0;
+}
+
+// QUEUE (FIFO). Beware: array.shift() is O(n) — it re-indexes everything.
+// For a real queue use a linked structure or two-stack trick.
+// Node's job queues (BullMQ) do this for you over Redis.
+class Queue {                 // O(1) enqueue AND dequeue
+  in = []; out = [];
+  enqueue(x) { this.in.push(x); }
+  dequeue() { if (!this.out.length) while (this.in.length) this.out.push(this.in.pop()); return this.out.pop(); }
+}</pre>
+<pre class="code" data-lang="go">// STACK — a slice; append to push, reslice to pop. Both O(1) amortized.
+stack := []string{}
+stack = append(stack, "a")          // push
+top := stack[len(stack)-1]          // peek
+stack = stack[:len(stack)-1]        // pop
+
+// QUEUE — for a robust O(1) FIFO, container/list (a doubly linked list)
+import "container/list"
+
+q := list.New()
+q.PushBack("job-1")                 // enqueue at the back
+q.PushBack("job-2")
+front := q.Front()                  // oldest
+q.Remove(front)                     // dequeue — O(1)
+
+// In a real service the "queue" is a buffered channel or Redis;
+// this call stack (LIFO) is literally how Go runs your functions.</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes">The <b>call stack</b> is a stack you use without noticing — infinite recursion overflows it (the site's namesake). The <b>job queue</b> is the message queue from Backend Core. Gotcha: JavaScript's <code>Array.shift()</code> and naively re-slicing the front of a Go slice are O(n); the two-stack trick (Node) or <code>container/list</code> (Go) keep dequeue O(1) when it matters.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 13 · SEARCH TREE ============ -->
+<section class="section" id="tree">
+  <div class="wrap lesson">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">DSA 04</div>
+      <h3>Search trees: how indexes find anything</h3>
+      <p>Keep keys sorted in a tree: smaller to the left, bigger to the right. Now any search is a series of yes/no questions — each one throws away half the data. A million keys? Found in ~20 hops. That's the <code>O(log n)</code> from the index race in FIG. 04.</p>
+      <p>Real databases use <b>B-trees</b> — the same idea, but each node holds many keys so it fits a disk page and the tree stays only 3–4 levels deep, even with billions of rows.</p>
+      <div class="takeaway"><b>Try:</b> insert 10 random keys, then search for one. Count the hops — then imagine the tree with a million keys. Still ~20 hops.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 13</span><span class="fig-title">Binary search tree</span>
+        <span class="fig-note" id="tree-note">smaller ← node → bigger</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <input type="number" id="tree-key" placeholder="0–99" min="0" max="99" style="width:90px;">
+          <button class="btn btn-chalk" id="tree-insert">INSERT</button>
+          <button class="btn btn-chalk" id="tree-search">SEARCH</button>
+          <button class="btn btn-chalk" id="tree-random">+10 RANDOM</button>
+          <button class="btn btn-chalk" id="tree-clear">↺</button>
+        </div>
+        <svg id="tree-svg" viewBox="0 0 760 320" style="width:100%; height:auto; display:block;"></svg>
+        <div class="fig-stats">
+          <span class="stat-chip">keys <b id="tree-count">0</b></span>
+          <span class="stat-chip">last search <b id="tree-hops">–</b> hops</span>
+          <span class="stat-chip">full scan would cost <b id="tree-scan">–</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — trees are the DB index; use sorted structures</summary>
+      <div class="deep-body">
+        <p>You almost never hand-roll a balanced tree — the <b>database's B-tree index</b> is the tree that matters, and it's created with one line of SQL. When you need sorted, in-memory ordering, reach for a library or keep a sorted slice.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">SQL + Node.js</button>
+          <button class="code-tab" data-lang="go">SQL + Go</button>
+        </div>
+<pre class="code is-on" data-lang="node">-- The tree you actually use: a B-tree index. One line.
+CREATE INDEX idx_events_created ON events(created_at);
+
+-- Now range + sorted queries are O(log n) seeks, not O(n) scans:
+SELECT * FROM events WHERE created_at &gt; now() - interval '1 day'
+ORDER BY created_at DESC LIMIT 100;
+
+// In JS, the built-in "sorted structure" is just a sorted array +
+// binary search — O(log n) to find, O(n) to insert (shifting).
+function bsearch(sortedArr, target) {
+  let lo = 0, hi = sortedArr.length - 1;
+  while (lo &lt;= hi) {
+    const mid = (lo + hi) &gt;&gt; 1;          // same halving the BST does
+    if (sortedArr[mid] === target) return mid;
+    if (sortedArr[mid] &lt; target) lo = mid + 1; else hi = mid - 1;
+  }
+  return -1;
+}
+// Need a real balanced tree in memory? Use a library (e.g. sorted-btree).</pre>
+<pre class="code" data-lang="go">// The tree that matters is the DB index:
+//   CREATE INDEX idx_events_created ON events(created_at);
+
+// In Go, sort.Search is binary search over a sorted slice — O(log n):
+import "sort"
+
+nums := []int{3, 12, 25, 37, 50, 62, 88} // must be sorted
+i := sort.Search(len(nums), func(i int) bool { return nums[i] &gt;= 37 })
+if i &lt; len(nums) &amp;&amp; nums[i] == 37 {
+	// found at index i in ~log2(n) steps
+}
+
+// For an ordered map/tree in memory, use a library such as
+// github.com/google/btree — but 99% of the time, let Postgres'
+// B-tree index do the sorted lookups for you.</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes">A database <b>B-tree</b> keeps billions of rows only 3–4 levels deep, so any lookup is a handful of disk reads. That's why <code>WHERE indexed_col = ?</code> and <code>ORDER BY indexed_col</code> are fast and un-indexed ones aren't. The binary search above is the same halving idea a search tree performs at every node — understand one and you understand both.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 14 · ARRAY VS LINKED LIST ============ -->
+<section class="section" id="arraylist">
+  <div class="wrap lesson flip">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">DSA 05</div>
+      <h3>Arrays vs linked lists</h3>
+      <p>An <b>array</b> is one contiguous block: element #7 lives at <code>start + 7 × size</code>, so jumping to any index is instant. A <b>linked list</b> scatters nodes across memory, each pointing to the next: to reach #7 you must walk through six others.</p>
+      <p>Backend relevance: rows in a table page, items in a Redis list, buffers in your web server — access patterns decide which wins. Arrays for random reads, lists for cheap inserts at the ends.</p>
+      <div class="takeaway"><b>Try:</b> access index 7 in both. One step vs eight. Then insert at the front — and watch the array pay for its neat layout by shifting everything.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 14</span><span class="fig-title">Memory layout</span>
+        <span class="fig-note" id="al-note">amber = visited</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <button class="btn btn-chalk" id="al-access">READ INDEX 7</button>
+          <button class="btn btn-chalk" id="al-insert">INSERT AT FRONT</button>
+        </div>
+        <div class="label mono" style="font-size:.68rem; letter-spacing:.1em; color:var(--chalk); text-transform:uppercase; margin-bottom:6px;">array — contiguous</div>
+        <div class="cell-row" id="al-array" style="margin-bottom:16px;"></div>
+        <div class="label mono" style="font-size:.68rem; letter-spacing:.1em; color:var(--chalk); text-transform:uppercase; margin-bottom:6px;">linked list — pointer chain</div>
+        <div class="cell-row" id="al-list" style="margin-bottom:8px;"></div>
+        <div class="fig-stats">
+          <span class="stat-chip">array steps <b id="al-array-steps">–</b></span>
+          <span class="stat-chip">list steps <b id="al-list-steps">–</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — arrays vs lists, and why it's usually arrays</summary>
+      <div class="deep-body">
+        <p>The figure showed the trade-off. In practice you reach for the dynamic array (JS <code>Array</code>, Go slice) almost every time — CPUs love contiguous memory. Linked lists earn their place only for cheap end-inserts and O(1) splicing.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Node.js</button>
+          <button class="code-tab" data-lang="go">Go</button>
+        </div>
+<pre class="code is-on" data-lang="node">// ARRAY — random access O(1), insert-at-front O(n) (shifts everything)
+const arr = [10, 20, 30];
+arr[2];              // O(1) — jump straight to the address
+arr.push(40);        // O(1) amortized — append at the end
+arr.unshift(5);      // O(n) — every element shifts right
+arr.splice(1, 0, 15);// O(n) — insert in the middle
+
+// LINKED LIST — insert/remove at a known node O(1), but access is O(n)
+class Node { constructor(v) { this.v = v; this.next = null; } }
+// You rarely build this by hand in JS; the array is faster in practice
+// because contiguous memory is cache-friendly. Prefer arrays unless you
+// profile and prove otherwise.</pre>
+<pre class="code" data-lang="go">// SLICE — the workhorse. Contiguous, cache-friendly, index O(1).
+s := []int{10, 20, 30}
+_ = s[2]                       // O(1) random access
+s = append(s, 40)             // O(1) amortized append
+s = append([]int{5}, s...)    // O(n) prepend — copies everything
+
+// LINKED LIST — standard library, when you need O(1) middle splices
+import "container/list"
+l := list.New()
+e := l.PushBack(20)
+l.InsertBefore(10, e)         // O(1) given the element pointer
+l.Remove(e)                   // O(1)
+
+// Rule of thumb: default to a slice. Contiguous memory beats pointer-
+// chasing so often that "just use a slice/array" is usually right.</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes">Modern CPUs read memory in cache lines, so walking a contiguous array is dramatically faster than chasing a linked list's scattered pointers — even when Big-O says they're equal. This is why "the array is fine" is usually the correct backend answer. Rows in a table page, items in a Redis list, and bytes in your HTTP buffer are all contiguous for exactly this reason.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap reveal">
+    <h2>That's the whole list.</h2>
+    <p class="lead">Hash tables for "find it now", trees for "find it sorted", queues for "do it later", stacks for "how code runs", Big-O to judge them all. Everything else you can learn when a real problem demands it. Now go earn a high score in the <a href="game.html"><b>arcade →</b></a></p>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap">
+    <span>Backend Blueprint — an open, static site. No servers were harmed (they're simulated).</span>
+    <span class="mono">SHEET REV <span data-year></span> · BUILT FOR GITHUB PAGES</span>
+  </div>
+</footer>
+
+<script src="js/common.js"></script>
+<script src="js/dsa.js"></script>
+</body>
+</html>

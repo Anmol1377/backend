@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backend Blueprint — learn the backend by watching it run</title>
+<meta name="description" content="An interactive, visual course on backend engineering: HTTP, databases, caching, load balancing, queues, auth and the DSA that actually matters — with games and FAQs.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230f2e66'/><circle cx='9' cy='16' r='3.4' fill='%23ffb224'/><circle cx='23' cy='9' r='3' fill='none' stroke='%23a8c3f0' stroke-width='2'/><circle cx='23' cy='23' r='3' fill='none' stroke='%23a8c3f0' stroke-width='2'/><path d='M12 15l8-5M12 17l8 5' stroke='%23a8c3f0' stroke-width='2'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">
+        <svg width="18" height="18" viewBox="0 0 32 32"><circle cx="9" cy="16" r="3.4" fill="#ffb224"/><circle cx="23" cy="9" r="3" fill="none" stroke="#a8c3f0" stroke-width="2"/><circle cx="23" cy="23" r="3" fill="none" stroke="#a8c3f0" stroke-width="2"/><path d="M12 15l8-5M12 17l8 5" stroke="#a8c3f0" stroke-width="2"/></svg>
+      </span>
+      <span>Backend Blueprint<small>learn it by watching it run</small></span>
+    </a>
+    <button class="nav-toggle" aria-label="Menu">MENU</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="learn.html">Backend Core</a>
+      <a href="dsa.html">DSA for Backend</a>
+      <a href="advanced.html">Security &amp; Ops</a>
+      <a href="game.html">Arcade</a>
+      <a href="faq.html">FAQ</a>
+    </div>
+    <span class="nav-progress" data-nav-progress></span>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="section" style="padding-top:64px;">
+  <div class="wrap">
+    <div class="eyebrow">SHEET 01 · DRAWN FOR CURIOUS DEVELOPERS · NOT TO SCALE</div>
+    <h1>Every backend is a drawing<br>you can learn to read.</h1>
+    <p class="lead">Type a URL, hit enter — and a request races through DNS, load balancers, servers, caches and databases in milliseconds. This site draws that hidden machinery as living blueprints you can poke, break and replay.</p>
+    <p style="display:flex; gap:12px; flex-wrap:wrap; margin-top:1.6rem;">
+      <a class="btn btn-primary" href="learn.html">Start the course</a>
+      <a class="btn btn-ghost" href="game.html">Play the arcade</a>
+    </p>
+
+    <!-- signature: live request journey -->
+    <div class="fig reveal" style="margin-top:44px;">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 01</span>
+        <span class="fig-title">The journey of one request</span>
+        <span class="fig-note">GET /profile · watch the wire</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <button class="btn btn-chalk" id="hero-send">▶ SEND REQUEST</button>
+          <button class="btn btn-chalk" id="hero-auto">LOOP: OFF</button>
+          <span class="label" id="hero-status" style="margin-left:auto;">idle — press send</span>
+        </div>
+        <svg id="hero-svg" viewBox="0 0 900 300" style="width:100%; height:auto; display:block;" role="img" aria-label="Animated schematic of a request travelling from a browser through DNS, a load balancer and an app server to cache and database">
+          <defs>
+            <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0 0 L8 4 L0 8 z" fill="rgba(168,195,240,.6)"/>
+            </marker>
+          </defs>
+          <!-- wires -->
+          <g stroke="rgba(168,195,240,.5)" stroke-width="1.5" fill="none">
+            <path id="w-dns"   d="M118 96 C 170 60, 210 60, 258 88" stroke-dasharray="5 5" marker-end="url(#arr)"/>
+            <path id="w-lb"    d="M118 130 L 340 130" marker-end="url(#arr)"/>
+            <path id="w-app"   d="M424 130 L 560 130" marker-end="url(#arr)"/>
+            <path id="w-cache" d="M646 108 C 700 80, 730 80, 768 96" marker-end="url(#arr)"/>
+            <path id="w-db"    d="M646 152 C 700 180, 730 180, 768 172" marker-end="url(#arr)"/>
+          </g>
+          <!-- nodes -->
+          <g font-family="JetBrains Mono, monospace">
+            <g id="n-browser"><rect x="38" y="98" width="80" height="64" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="78" y="126" text-anchor="middle" font-size="20" fill="#e2ecfd">🧑‍💻</text>
+              <text x="78" y="150" text-anchor="middle" class="node-label">browser</text></g>
+            <g id="n-dns"><rect x="258" y="52" width="82" height="52" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4" stroke-dasharray="4 3"/>
+              <text x="299" y="74" text-anchor="middle" font-size="15" fill="#e2ecfd">📖</text>
+              <text x="299" y="94" text-anchor="middle" class="node-label">dns</text></g>
+            <g id="n-lb"><rect x="340" y="98" width="84" height="64" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="382" y="126" text-anchor="middle" font-size="18" fill="#e2ecfd">🚦</text>
+              <text x="382" y="150" text-anchor="middle" class="node-label">load bal.</text></g>
+            <g id="n-app"><rect x="560" y="94" width="86" height="72" rx="9" fill="rgba(10,33,73,.6)" stroke="#ffb224" stroke-width="1.6"/>
+              <text x="603" y="124" text-anchor="middle" font-size="18" fill="#e2ecfd">⚙️</text>
+              <text x="603" y="150" text-anchor="middle" class="node-label" fill="#ffb224">app server</text></g>
+            <g id="n-cache"><rect x="768" y="66" width="94" height="52" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="815" y="88" text-anchor="middle" font-size="15" fill="#e2ecfd">⚡</text>
+              <text x="815" y="108" text-anchor="middle" class="node-label">cache</text></g>
+            <g id="n-db"><rect x="768" y="146" width="94" height="52" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="815" y="168" text-anchor="middle" font-size="15" fill="#e2ecfd">🗄️</text>
+              <text x="815" y="188" text-anchor="middle" class="node-label">database</text></g>
+          </g>
+          <!-- packet -->
+          <circle id="packet" r="7" fill="#ffb224" opacity="0" style="filter: drop-shadow(0 0 6px rgba(255,178,36,.9));"/>
+          <!-- annotations -->
+          <text x="38" y="252" class="node-label" font-size="11">FIG. 01 — SIMPLIFIED. REAL SYSTEMS ADD TLS, CDN, FIREWALLS &amp; RETRIES.</text>
+          <text id="latency-note" x="862" y="252" text-anchor="end" class="node-label" font-size="11" fill="#ffb224"></text>
+        </svg>
+        <div class="fig-log" id="hero-log" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= COURSE MAP ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">SHEET 02 · COURSE MAP</div>
+      <h2>Twenty-three small machines.<br>One working backend.</h2>
+      <p class="lead">Each module is a lesson plus an interactive schematic. Touch a control in any figure and the module is marked explored.</p>
+    </div>
+
+    <h3 class="mono" style="font-size:.78rem; letter-spacing:.12em; color:var(--muted); text-transform:uppercase;">Part I — Backend Core</h3>
+    <div class="grid-3" style="margin:14px 0 34px;">
+      <a class="card topic-card reveal" href="learn.html#http" data-module="http">
+        <span class="fig-no">FIG. 02</span><h3>Speak HTTP</h3>
+        <p>Build real requests, read raw responses, learn what verbs and headers actually do.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="learn.html#status" data-module="status">
+        <span class="fig-no">FIG. 03</span><h3>Status codes</h3>
+        <p>200, 301, 404, 503 — the server's entire vocabulary for telling you what happened.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="learn.html#db" data-module="db">
+        <span class="fig-no">FIG. 04</span><h3>Databases &amp; indexes</h3>
+        <p>Race a full table scan against an index and see why one query is 100× faster.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="learn.html#cache" data-module="cache">
+        <span class="fig-no">FIG. 05</span><h3>Caching &amp; LRU</h3>
+        <p>Watch a tiny cache evict its least-recently-used item and your hit rate climb.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="learn.html#lb" data-module="lb">
+        <span class="fig-no">FIG. 06</span><h3>Load balancing</h3>
+        <p>Spray traffic across servers, then kill one mid-flight and watch the failover.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="learn.html#queue" data-module="queue">
+        <span class="fig-no">FIG. 07</span><h3>Message queues</h3>
+        <p>Producers, consumers and backpressure — how backends survive traffic spikes.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="learn.html#auth" data-module="auth">
+        <span class="fig-no">FIG. 08</span><h3>Auth &amp; JWT</h3>
+        <p>Step through login, token signing and stateless verification, byte by byte.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="learn.html#scale" data-module="scale">
+        <span class="fig-no">FIG. 09</span><h3>Scaling up vs out</h3>
+        <p>Bigger machine or more machines? The trade-off behind every architecture review.</p><span class="done"></span>
+      </a>
+    </div>
+
+    <h3 class="mono" style="font-size:.78rem; letter-spacing:.12em; color:var(--muted); text-transform:uppercase;">Part II — Only the DSA a backend dev needs</h3>
+    <div class="grid-3" style="margin:14px 0 34px;">
+      <a class="card topic-card reveal" href="dsa.html#bigo" data-module="bigo">
+        <span class="fig-no">FIG. 10</span><h3>Big-O intuition</h3>
+        <p>Drag a slider from 10 rows to a million and feel why complexity classes matter.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="dsa.html#hash" data-module="hash">
+        <span class="fig-no">FIG. 11</span><h3>Hash tables</h3>
+        <p>The O(1) trick behind caches, sessions, dictionaries and DB hash indexes.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="dsa.html#stackqueue" data-module="stackqueue">
+        <span class="fig-no">FIG. 12</span><h3>Stacks &amp; queues</h3>
+        <p>The call stack that runs your code and the job queue that feeds your workers.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="dsa.html#tree" data-module="tree">
+        <span class="fig-no">FIG. 13</span><h3>Search trees</h3>
+        <p>Insert keys, watch a tree grow, and see how database indexes find anything in ~3 hops.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="dsa.html#arraylist" data-module="arraylist">
+        <span class="fig-no">FIG. 14</span><h3>Arrays vs linked lists</h3>
+        <p>Contiguous memory vs pointer-chasing — and why it shows up in latency graphs.</p><span class="done"></span>
+      </a>
+    </div>
+
+    <h3 class="mono" style="font-size:.78rem; letter-spacing:.12em; color:var(--muted); text-transform:uppercase;">Part III — Security &amp; Ops</h3>
+    <div class="grid-3" style="margin:14px 0 34px;">
+      <a class="card topic-card reveal" href="advanced.html#tls" data-module="tls">
+        <span class="fig-no">FIG. 15</span><h3>SSL/TLS</h3>
+        <p>Step through the padlock handshake — and eavesdrop to see what encryption hides.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="advanced.html#cors" data-module="cors">
+        <span class="fig-no">FIG. 16</span><h3>CORS</h3>
+        <p>Recreate the "blocked by CORS policy" error on purpose — then fix it server-side.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="advanced.html#ratelimit" data-module="ratelimit">
+        <span class="fig-no">FIG. 17</span><h3>Rate limiting</h3>
+        <p>Drain a token bucket with a burst of requests and watch the 429s bounce.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="advanced.html#sqli" data-module="sqli">
+        <span class="fig-no">FIG. 18</span><h3>SQL injection</h3>
+        <p>Breach a login with <code>' OR '1'='1</code>, then defuse it with parameterized queries.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="advanced.html#access" data-module="access">
+        <span class="fig-no">FIG. 19</span><h3>RBAC &amp; ABAC</h3>
+        <p>Run the same request through role-based and attribute-based access control.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="advanced.html#ws" data-module="ws">
+        <span class="fig-no">FIG. 20</span><h3>WebSockets</h3>
+        <p>Polling vs a persistent pipe — watch the wasted requests pile up on one side.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="advanced.html#proxy" data-module="proxy">
+        <span class="fig-no">FIG. 21</span><h3>Reverse proxy</h3>
+        <p>One nginx door routing to apps, static files and a VPN-only admin panel.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="advanced.html#docker" data-module="docker">
+        <span class="fig-no">FIG. 22</span><h3>Docker</h3>
+        <p>Build an image layer by layer, then run identical containers from it.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="advanced.html#migrate" data-module="migrate">
+        <span class="fig-no">FIG. 23</span><h3>DB migrations</h3>
+        <p>Version-control your schema: apply, index CONCURRENTLY, roll back — safely.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="advanced.html#sysdesign" data-module="sysdesign">
+        <span class="fig-no">FIG. 24</span><h3>System design capstone</h3>
+        <p>Grow a URL shortener from one server to a spike-proof architecture, stage by stage.</p><span class="done"></span>
+      </a>
+      <a class="card topic-card reveal" href="game.html" data-module="arcade" style="border-style:dashed;">
+        <span class="fig-no">ARCADE</span><h3>Prove it in the arcade</h3>
+        <p>Status Rush and the Backend Quiz turn everything above into a high-score chase.</p><span class="done"></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW TO USE ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">SHEET 03 · READING ORDER</div>
+      <h2>How to use this site</h2>
+    </div>
+    <div class="grid-3">
+      <div class="card reveal">
+        <span class="fig-no" style="color:var(--accent);">STEP A</span>
+        <h3>Watch first</h3>
+        <p style="color:var(--muted); font-size:.95rem;">Run every figure before reading the prose. Your eyes will form the question the text answers.</p>
+      </div>
+      <div class="card reveal">
+        <span class="fig-no" style="color:var(--accent);">STEP B</span>
+        <h3>Break things</h3>
+        <p style="color:var(--muted); font-size:.95rem;">Kill a server. Overflow the queue. Shrink the cache. Failure modes are where the learning is.</p>
+      </div>
+      <div class="card reveal">
+        <span class="fig-no" style="color:var(--accent);">STEP C</span>
+        <h3>Score it</h3>
+        <p style="color:var(--muted); font-size:.95rem;">Finish in the <a href="game.html">arcade</a>. If you can beat Status Rush on a streak, you've internalized it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap">
+    <span>Backend Blueprint — an open, static site. No servers were harmed (they're simulated).</span>
+    <span class="mono">SHEET REV <span data-year></span> · BUILT FOR GITHUB PAGES</span>
+  </div>
+</footer>
+
+<script src="js/common.js"></script>
+<script src="js/home.js"></script>
+</body>
+</html>

@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security &amp; Ops — Backend Blueprint</title>
+<meta name="description" content="Interactive lessons on SSL/TLS, CORS, rate limiting, SQL injection prevention, RBAC vs ABAC, WebSockets, reverse proxies, Docker, database migrations and system design.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230f2e66'/><circle cx='9' cy='16' r='3.4' fill='%23ffb224'/><circle cx='23' cy='9' r='3' fill='none' stroke='%23a8c3f0' stroke-width='2'/><circle cx='23' cy='23' r='3' fill='none' stroke='%23a8c3f0' stroke-width='2'/><path d='M12 15l8-5M12 17l8 5' stroke='%23a8c3f0' stroke-width='2'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">
+        <svg width="18" height="18" viewBox="0 0 32 32"><circle cx="9" cy="16" r="3.4" fill="#ffb224"/><circle cx="23" cy="9" r="3" fill="none" stroke="#a8c3f0" stroke-width="2"/><circle cx="23" cy="23" r="3" fill="none" stroke="#a8c3f0" stroke-width="2"/><path d="M12 15l8-5M12 17l8 5" stroke="#a8c3f0" stroke-width="2"/></svg>
+      </span>
+      <span>Backend Blueprint<small>learn it by watching it run</small></span>
+    </a>
+    <button class="nav-toggle" aria-label="Menu">MENU</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="learn.html">Backend Core</a>
+      <a href="dsa.html">DSA for Backend</a>
+      <a href="advanced.html">Security &amp; Ops</a>
+      <a href="game.html">Arcade</a>
+      <a href="faq.html">FAQ</a>
+    </div>
+    <span class="nav-progress" data-nav-progress></span>
+  </div>
+</nav>
+
+<header class="section" style="padding-bottom:36px;">
+  <div class="wrap">
+    <div class="eyebrow">PART III · SECURITY &amp; OPS · FIGS. 15–24</div>
+    <h1>The parts that keep you<br>employed (and un-hacked)</h1>
+    <p class="lead">Ten modules on what happens between "it works on my laptop" and "it's serving strangers safely": encryption, browsers' trust rules, abuse defense, access control, and the machinery of shipping.</p>
+  </div>
+</header>
+
+<!-- ============ FIG 15 · SSL/TLS ============ -->
+<section class="section" id="tls">
+  <div class="wrap lesson">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">MODULE 09</div>
+      <h3>SSL/TLS: the padlock handshake</h3>
+      <p>The <b>S</b> in HTTPS. Before any data flows, client and server perform a <b>TLS handshake</b>: the server proves its identity with a certificate signed by a trusted authority, then both sides agree on a shared secret key. After that, everything is symmetrically encrypted.</p>
+      <p>("SSL" is the retired 1990s name; the modern protocol is TLS 1.2/1.3 — but the old name stuck to the padlock.) TLS gives you three things: <b>encryption</b> (nobody reads it), <b>integrity</b> (nobody alters it), <b>authentication</b> (you're talking to the real server).</p>
+      <div class="takeaway"><b>Try:</b> step through the handshake, then hit EAVESDROP at each step to see exactly what an attacker on the wifi can and can't read.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 15</span><span class="fig-title">TLS handshake</span>
+        <span class="fig-note" id="tls-note">step 0 / 4</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <button class="btn btn-chalk" id="tls-next">▶ NEXT STEP</button>
+          <button class="btn btn-chalk" id="tls-spy">👂 EAVESDROP</button>
+          <button class="btn btn-chalk" id="tls-reset">↺ RESET</button>
+        </div>
+        <div class="fig-log" id="tls-stage" style="min-height:210px; max-height:none; font-size:.8rem; line-height:1.8;" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — actually serve HTTPS</summary>
+      <div class="deep-body">
+        <p>You rarely implement TLS — you <em>enable</em> it. In production a reverse proxy terminates it; here's how each runtime does it directly, plus the tool that gets you a free, auto-renewing certificate.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Node.js</button>
+          <button class="code-tab" data-lang="go">Go</button>
+        </div>
+<pre class="code is-on" data-lang="node">import https from "node:https";
+import fs from "node:fs";
+
+// You need a cert + private key. In dev, generate a self-signed pair:
+//   openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem \
+//     -out cert.pem -days 365
+const options = {
+  key: fs.readFileSync("key.pem"),
+  cert: fs.readFileSync("cert.pem"),
+};
+
+https.createServer(options, app).listen(443);
+
+// In real life you DON'T do this — you put nginx/Caddy/a cloud LB in
+// front to terminate TLS and auto-manage certs. Node speaks plain HTTP
+// on an internal port; the proxy handles the padlock (see FIG. 21).</pre>
+<pre class="code" data-lang="go">package main
+
+import "net/http"
+
+func main() {
+	// Serve HTTPS from a cert + key pair:
+	http.HandleFunc("/", handler)
+	http.ListenAndServeTLS(":443", "cert.pem", "key.pem", nil)
+}
+
+// Even easier — Go can fetch &amp; auto-renew Let's Encrypt certs itself:
+//   import "golang.org/x/crypto/acme/autocert"
+//   m := &amp;autocert.Manager{
+//       Prompt:     autocert.AcceptTOS,
+//       HostPolicy: autocert.HostWhitelist("api.example.com"),
+//       Cache:      autocert.DirCache("certs"),
+//   }
+//   server := &amp;http.Server{Addr: ":443", TLSConfig: m.TLSConfig()}
+//   server.ListenAndServeTLS("", "") // certs come from the manager</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes">Get free, auto-renewing certificates from <b>Let's Encrypt</b> — or better, let <b>Caddy</b> or your cloud load balancer do it with zero config. <b>Redirect all HTTP to HTTPS</b> and send an <code>HSTS</code> header so browsers refuse plaintext. Never ship a self-signed cert to production (browsers show a scary warning) — it's for local dev only. Modern default: <b>TLS 1.3</b>.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 16 · CORS ============ -->
+<section class="section" id="cors">
+  <div class="wrap lesson flip">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">MODULE 10</div>
+      <h3>CORS: the browser's border control</h3>
+      <p>By default, a browser refuses to let JavaScript on <code>site-a.com</code> read responses from <code>site-b.com</code> — the <b>same-origin policy</b>. <b>CORS</b> is how a server opts in: it answers with <code>Access-Control-Allow-Origin</code> headers naming who may read its responses.</p>
+      <p>The error every developer meets on day one — <em>"blocked by CORS policy"</em> — is the <b>browser</b> protecting users, not the server rejecting you. In fact the server often already processed the request; the browser just refuses to hand the response to the page's JavaScript.</p>
+      <div class="takeaway"><b>Try:</b> fetch as <code>localhost:3000</code> against a server that only allows the production origin — the classic local-dev wall. Then fix it server-side.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 16</span><span class="fig-title">Cross-origin request simulator</span>
+        <span class="fig-note">api.example.com decides</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <span class="label">JS runs on</span>
+          <select id="cors-origin">
+            <option>https://app.example.com</option>
+            <option>http://localhost:3000</option>
+            <option>https://evil.com</option>
+          </select>
+          <span class="label">server allows</span>
+          <select id="cors-allow">
+            <option>https://app.example.com</option>
+            <option>*</option>
+            <option value="none">(no CORS headers)</option>
+          </select>
+          <button class="btn btn-chalk" id="cors-send">▶ FETCH /api/data</button>
+        </div>
+        <div class="fig-log" id="cors-log" style="min-height:150px; max-height:240px;" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — configure CORS correctly (and safely)</summary>
+      <div class="deep-body">
+        <p>CORS is a few lines of server config. The danger is getting lazy and allowing <code>*</code> on an authenticated API — which lets any website read your users' data.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Node.js (cors)</button>
+          <button class="code-tab" data-lang="go">Go (rs/cors)</button>
+        </div>
+<pre class="code is-on" data-lang="node">// npm i cors
+import cors from "cors";
+
+// ✅ Allow only the origins you trust, and only if you send cookies/creds
+app.use(cors({
+  origin: ["https://app.example.com", "http://localhost:3000"], // dev too
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,          // needed if the browser sends cookies
+}));
+
+// ❌ DON'T do this on an API that returns private/user data:
+// app.use(cors({ origin: "*" }));   // any site on the internet can read it
+// (Also: "*" is forbidden together with credentials:true — by design.)
+
+// The browser sends a preflight OPTIONS request for non-simple calls;
+// the cors middleware answers it automatically.</pre>
+<pre class="code" data-lang="go">// go get github.com/rs/cors
+import "github.com/rs/cors"
+
+c := cors.New(cors.Options{
+	AllowedOrigins: []string{
+		"https://app.example.com",
+		"http://localhost:3000", // your dev frontend
+	},
+	AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+	AllowCredentials: true,
+})
+
+handler := c.Handler(mux) // wrap your router
+http.ListenAndServe(":3000", handler)
+
+// Same rule: never pair AllowedOrigins:["*"] with AllowCredentials:true.
+// Echo only origins you actually trust.</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes">Remember <b>who enforces CORS: the browser</b>. Server-to-server calls and tools like <code>curl</code> ignore it entirely — so CORS is not a security boundary, it's a browser convenience/guardrail. Real access control is auth + the RBAC/ABAC module. The "<code>*</code> is fine, it's public data" call is only safe when the data really is public and unauthenticated.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 17 · RATE LIMITING ============ -->
+<section class="section" id="ratelimit">
+  <div class="wrap lesson">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">MODULE 11</div>
+      <h3>Rate limiting: the token bucket</h3>
+      <p>Every public API gets abused — scrapers, brute-forcers, runaway loops. A <b>rate limiter</b> gives each client a budget. The classic algorithm is the <b>token bucket</b>: the bucket holds N tokens, refills at a steady rate, and every request spends one. Empty bucket → <code>429 Too Many Requests</code>.</p>
+      <p>The elegance: steady users never notice, while bursts get absorbed up to the bucket size and floods get rejected cheaply. Real implementations keep one bucket per API key or IP — in Redis, naturally.</p>
+      <div class="takeaway"><b>Try:</b> send single requests (fine), then BURST 15 and watch the last five bounce with 429s. Lower the refill rate to make the limiter stricter.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 17</span><span class="fig-title">Token bucket · capacity 10</span>
+        <span class="fig-note">refill <span id="rl-rate-note">2</span>/s</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <button class="btn btn-chalk" id="rl-one">1 REQUEST</button>
+          <button class="btn btn-chalk" id="rl-burst">💥 BURST 15</button>
+          <span class="label">refill</span>
+          <input type="range" id="rl-rate" min="1" max="5" value="2" style="width:90px;">
+        </div>
+        <div class="cell-row" id="rl-bucket" style="margin-bottom:14px;"></div>
+        <div class="fig-log" id="rl-log" aria-live="polite"></div>
+        <div class="fig-stats">
+          <span class="stat-chip">served <b id="rl-ok">0</b></span>
+          <span class="stat-chip">rejected (429) <b id="rl-rej">0</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — a distributed rate limiter with Redis</summary>
+      <div class="deep-body">
+        <p>A per-process counter breaks the moment you run two servers (each allows the full quota). Real limiters keep the bucket in <b>Redis</b> so all servers share one count per client.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Node.js</button>
+          <button class="code-tab" data-lang="go">Go</button>
+        </div>
+<pre class="code is-on" data-lang="node">// Simple &amp; solid: express-rate-limit backed by Redis
+// npm i express-rate-limit rate-limit-redis ioredis
+import rateLimit from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+import Redis from "ioredis";
+const redis = new Redis(process.env.REDIS_URL);
+
+const limiter = rateLimit({
+  store: new RedisStore({ sendCommand: (...a) =&gt; redis.call(...a) }),
+  windowMs: 60_000,     // per minute
+  limit: 100,           // 100 requests per key per window
+  keyGenerator: (req) =&gt; req.user?.id ?? req.ip, // per user, else per IP
+  standardHeaders: true,// sends RateLimit-* headers
+  handler: (req, res) =&gt; res.status(429).json({ error: "slow down" }),
+});
+
+app.use("/api/", limiter); // protect the whole API</pre>
+<pre class="code" data-lang="go">// Token bucket per client, shared via Redis (atomic INCR + TTL).
+// Libraries: github.com/ulule/limiter or go-redis/redis_rate.
+import "github.com/go-redis/redis_rate/v10"
+
+limiter := redis_rate.NewLimiter(rdb)
+
+func rateLimit(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		key := clientKey(r) // user id or IP
+		// allow 100 requests per minute, refilled steadily
+		res, _ := limiter.Allow(r.Context(), key, redis_rate.PerMinute(100))
+		if res.Allowed == 0 {
+			w.Header().Set("Retry-After", "1")
+			http.Error(w, "slow down", http.StatusTooManyRequests) // 429
+			return
+		}
+		next(w, r)
+	}
+}</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes">Rate-limit <b>by identity</b> (API key or user id), falling back to IP for anonymous traffic. Return <code>429</code> with a <code>Retry-After</code> header so well-behaved clients back off. Put the limiter <b>at the edge</b> (nginx, API gateway, Cloudflare) for cheap, early rejection, and keep an app-level limiter for per-user fairness. Common algorithms: token bucket (shown) and sliding-window counter.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 18 · SQL INJECTION ============ -->
+<section class="section" id="sqli">
+  <div class="wrap lesson flip">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">MODULE 12</div>
+      <h3>SQL injection — and its one true fix</h3>
+      <p>If you build SQL by gluing user input into a string, the user can finish your sentence for you. The payload <code>' OR '1'='1</code> turns "find this user" into "find <em>every</em> user". This single bug has leaked more databases than any other.</p>
+      <p>The fix is not cleverness — it's <b>parameterized queries</b> (prepared statements). The query shape and the data travel separately, so input is always treated as a <em>value</em>, never as SQL. Every ORM and driver does this; you just have to not bypass it.</p>
+      <div class="takeaway"><b>Try:</b> inject the payload in concatenation mode and breach the table. Flip to parameterized and watch the same payload become a harmless, weird username.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 18</span><span class="fig-title">Login query builder</span>
+        <span class="fig-note" id="sqli-note">users table: 3 rows</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <input type="text" id="sqli-input" value="ada" maxlength="40" style="width:190px;" aria-label="username input">
+          <button class="btn btn-chalk" id="sqli-payload">INSERT PAYLOAD</button>
+        </div>
+        <div class="fig-controls">
+          <span class="label">Query built by</span>
+          <button class="btn btn-chalk is-on" id="sqli-concat">STRING CONCAT 💀</button>
+          <button class="btn btn-chalk" id="sqli-param">PARAMETERIZED ✓</button>
+          <button class="btn btn-chalk" id="sqli-run" style="margin-left:auto;">▶ LOGIN</button>
+        </div>
+        <div class="fig-log" id="sqli-log" style="min-height:170px; max-height:260px;" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — the vulnerable line vs the safe line</summary>
+      <div class="deep-body">
+        <p>This is the single most important pair of snippets on the whole site. Learn to recognize the top one on sight and never write it.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Node.js</button>
+          <button class="code-tab" data-lang="go">Go</button>
+        </div>
+<pre class="code is-on" data-lang="node">// ❌ VULNERABLE — user input becomes part of the SQL text.
+// Input:  ' OR '1'='1' --   →  returns every row / logs in as anyone.
+const q = `SELECT * FROM users WHERE name = '${name}'`;
+await pool.query(q);                      // NEVER do this
+
+// ✅ SAFE — parameterized. The driver sends the SQL and the value
+// separately, so input is ALWAYS data, never executable SQL.
+await pool.query(
+  "SELECT * FROM users WHERE name = $1",
+  [name]                                  // the fix. That's it.
+);
+
+// ORMs do this for you — but you can still bypass them:
+await prisma.user.findMany({ where: { name } });        // safe
+await prisma.$queryRawUnsafe(`... ${name} ...`);        // ❌ unsafe again
+
+// Same rule guards against XSS on the output side: never inject
+// untrusted input into HTML/queries/commands without escaping.</pre>
+<pre class="code" data-lang="go">// ❌ VULNERABLE — building SQL with fmt.Sprintf
+q := fmt.Sprintf("SELECT * FROM users WHERE name = '%s'", name)
+db.Query(q) // one ' in `name` and an attacker owns your database
+
+// ✅ SAFE — placeholders. database/sql never interpolates the value.
+db.QueryRow("SELECT * FROM users WHERE name = $1", name).Scan(&amp;u.ID)
+
+// sqlc / GORM generate parameterized queries for you:
+//   db.Where("name = ?", name).First(&amp;u)   // safe
+// Just don't hand-concatenate. Ever.</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes">Parameterization is <b>the</b> fix — not blocklists, not stripping quotes (attackers always find an encoding you missed). Apply <b>least privilege</b> to the DB user so a breach can't <code>DROP TABLE</code>. The same "treat input as data, not code" rule defeats <b>XSS</b> (escape on HTML output) and <b>command injection</b> (never build shell strings from input — pass args as an array). Validate inputs, but never <em>rely</em> on validation for injection safety.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 19 · RBAC / ABAC ============ -->
+<section class="section" id="access">
+  <div class="wrap lesson">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">MODULE 13</div>
+      <h3>RBAC &amp; ABAC: who may do what</h3>
+      <p>Authentication says who you are (FIG. 08); <b>authorization</b> says what you may do. <b>RBAC</b> (role-based) is a lookup table: roles × actions. Simple, auditable, and enough for most apps.</p>
+      <p><b>ABAC</b> (attribute-based) evaluates a <em>policy</em> over attributes of the user, the resource and the context — "editors may edit <em>their own</em> documents <em>during business hours</em>". More expressive, harder to audit. Most real systems are RBAC with a few ABAC-style conditions bolted on.</p>
+      <div class="takeaway"><b>Try:</b> in RBAC, an editor can edit <em>any</em> document — spot the flaw. Switch to ABAC and make the same editor fail on a document they don't own.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 19</span><span class="fig-title">Access decision engine</span>
+        <span class="fig-note" id="access-note">mode: RBAC</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <button class="btn btn-chalk is-on" id="access-rbac">RBAC</button>
+          <button class="btn btn-chalk" id="access-abac">ABAC</button>
+        </div>
+        <div class="fig-controls">
+          <span class="label">user role</span>
+          <select id="access-role"><option>viewer</option><option selected>editor</option><option>admin</option></select>
+          <span class="label">action</span>
+          <select id="access-action"><option>read document</option><option selected>edit document</option><option>delete user</option></select>
+        </div>
+        <div class="fig-controls" id="access-attrs" style="display:none;">
+          <label class="label" style="display:flex; gap:6px; align-items:center; text-transform:none;"><input type="checkbox" id="attr-owner" checked> user owns the document</label>
+          <label class="label" style="display:flex; gap:6px; align-items:center; text-transform:none;"><input type="checkbox" id="attr-hours" checked> within business hours</label>
+        </div>
+        <div class="fig-controls">
+          <button class="btn btn-chalk" id="access-check">▶ CHECK ACCESS</button>
+        </div>
+        <div class="fig-log" id="access-log" style="min-height:130px; max-height:220px;" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — RBAC middleware &amp; an ABAC ownership check</summary>
+      <div class="deep-body">
+        <p>Authorization is middleware plus, for ABAC, a check against the specific resource. Note how the ownership check <em>has</em> to load the row first — that's the essence of attribute-based access.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Node.js</button>
+          <button class="code-tab" data-lang="go">Go</button>
+        </div>
+<pre class="code is-on" data-lang="node">// RBAC — a middleware factory. req.user was set by the JWT middleware.
+const require = (...roles) =&gt; (req, res, next) =&gt;
+  roles.includes(req.user.role)
+    ? next()
+    : res.status(403).json({ error: "forbidden" });
+
+app.delete("/users/:id", require("admin"), deleteUser);        // role gate
+app.get("/reports", require("admin", "analyst"), getReports);
+
+// ABAC — the rule depends on the resource, so we must load it first.
+async function editDoc(req, res) {
+  const doc = await db.getDoc(req.params.id);
+  const allowed =
+    req.user.role === "admin" ||
+    (req.user.role === "editor" &amp;&amp; doc.ownerId === req.user.sub); // owns it?
+  if (!allowed) return res.status(403).json({ error: "not yours" });
+  await db.updateDoc(doc.id, req.body);
+  res.json({ ok: true });
+}</pre>
+<pre class="code" data-lang="go">// RBAC — middleware that checks the role claim
+func requireRole(roles ...string) func(http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			u := userFromCtx(r)
+			for _, role := range roles {
+				if u.Role == role {
+					next(w, r)
+					return
+				}
+			}
+			http.Error(w, "forbidden", http.StatusForbidden) // 403
+		}
+	}
+}
+
+// ABAC — decision uses attributes of user AND the specific resource
+func editDoc(w http.ResponseWriter, r *http.Request) {
+	u := userFromCtx(r)
+	doc, _ := db.GetDoc(r.PathValue("id"))
+	allowed := u.Role == "admin" || (u.Role == "editor" &amp;&amp; doc.OwnerID == u.ID)
+	if !allowed {
+		http.Error(w, "not yours", http.StatusForbidden)
+		return
+	}
+	db.UpdateDoc(doc.ID, readBody(r))
+}</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes"><b>Check on the server, every time</b> — never trust the frontend to hide a button. Start with <b>RBAC</b> (simple, auditable); add ABAC-style conditions (<code>owns-it</code>, <code>same-tenant</code>, <code>business-hours</code>) only where you need them. For complex policies, dedicated engines like <b>OPA/Rego</b>, <b>Casbin</b>, or <b>Oso</b> externalize the rules so they're testable and centralized.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 20 · WEBSOCKETS ============ -->
+<section class="section" id="ws">
+  <div class="wrap lesson flip">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">MODULE 14</div>
+      <h3>WebSockets: when the server speaks first</h3>
+      <p>HTTP is request→response: the server can never start a conversation. For chat, live dashboards and games that's backwards. The old workaround is <b>polling</b> — asking "anything new?" every few seconds, mostly hearing "no".</p>
+      <p>A <b>WebSocket</b> starts as an HTTP request that <em>upgrades</em> into a persistent, two-way pipe. After one handshake, either side can send at any moment — millisecond delivery, no wasted requests. The cost: the server now holds an open connection per user, which is state to manage (remember FIG. 06).</p>
+      <div class="takeaway"><b>Try:</b> start both, then fire a few server events. Compare wasted requests and delivery delay — then imagine the polling column at 100,000 users.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 20</span><span class="fig-title">Polling vs WebSocket</span>
+        <span class="fig-note">same message, two transports</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <button class="btn btn-chalk" id="ws-start">▶ START BOTH</button>
+          <button class="btn btn-chalk" id="ws-event">📨 SERVER EVENT</button>
+        </div>
+        <div class="grid-2" style="gap:10px;">
+          <div>
+            <div class="label mono" style="font-size:.68rem; letter-spacing:.1em; color:var(--chalk); text-transform:uppercase; margin-bottom:6px;">HTTP polling · every 2s</div>
+            <div class="fig-log" id="ws-poll-log" style="min-height:150px; max-height:150px;"></div>
+          </div>
+          <div>
+            <div class="label mono" style="font-size:.68rem; letter-spacing:.1em; color:var(--chalk); text-transform:uppercase; margin-bottom:6px;">WebSocket · one pipe</div>
+            <div class="fig-log" id="ws-sock-log" style="min-height:150px; max-height:150px;"></div>
+          </div>
+        </div>
+        <div class="fig-stats">
+          <span class="stat-chip">polling requests <b id="ws-poll-count">0</b> · useful <b id="ws-poll-useful">0</b></span>
+          <span class="stat-chip">ws frames <b id="ws-sock-count">0</b> · all useful</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — a real-time server on both sides</summary>
+      <div class="deep-body">
+        <p>A chat/notifications server in ~15 lines each. The client upgrades once; after that the server pushes whenever it wants — the polling column of the figure disappears.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Node.js (ws)</button>
+          <button class="code-tab" data-lang="go">Go (gorilla/websocket)</button>
+        </div>
+<pre class="code is-on" data-lang="node">// npm i ws
+import { WebSocketServer } from "ws";
+const wss = new WebSocketServer({ port: 8080 });
+const clients = new Set();
+
+wss.on("connection", (socket) =&gt; {
+  clients.add(socket);                       // remember this connection
+  socket.on("message", (data) =&gt; {
+    // broadcast a chat message to everyone
+    for (const c of clients) c.send(data.toString());
+  });
+  socket.on("close", () =&gt; clients.delete(socket)); // clean up!
+});
+
+// The SERVER can push at any time — no request needed:
+function notify(userSocket, event) {
+  userSocket.send(JSON.stringify(event));    // ~5ms, zero polling
+}
+
+// Browser side:
+//   const ws = new WebSocket("wss://api.example.com/chat");
+//   ws.onmessage = (e) =&gt; render(JSON.parse(e.data));</pre>
+<pre class="code" data-lang="go">// go get github.com/gorilla/websocket
+var upgrader = websocket.Upgrader{}
+
+func chat(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil) // HTTP -&gt; WebSocket (101)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	for { // loop: read a message, echo/broadcast it
+		mt, msg, err := conn.ReadMessage()
+		if err != nil {
+			break // client disconnected — exit and clean up
+		}
+		conn.WriteMessage(mt, msg) // the server can also write unprompted
+	}
+}
+
+// Register: http.HandleFunc("/chat", chat)
+// Each connection is one goroutine — cheap, but it IS held-open state.</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes">Open connections are <b>state</b> — with multiple servers (FIG. 06), user A on server 1 and user B on server 2 can't see each other unless you fan messages through <b>Redis pub/sub</b> or a broker. Always handle <b>disconnects</b> and add <b>heartbeats/ping-pong</b> to detect dead sockets. If you only need server→client (live feeds, progress), <b>Server-Sent Events (SSE)</b> are simpler. Authenticate the upgrade request just like any other route.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 21 · REVERSE PROXY ============ -->
+<section class="section" id="proxy">
+  <div class="wrap lesson">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">MODULE 15</div>
+      <h3>Reverse proxy: the front desk</h3>
+      <p>A <b>reverse proxy</b> (nginx, Caddy, Traefik) is the one server the internet actually talks to. It terminates TLS (FIG. 15), then routes each path to the right internal service — your app on port 3000, static files from disk, an admin panel kept off the public net.</p>
+      <p>Along the way it compresses responses, caches static assets, adds security headers and hides your internal topology. A <b>load balancer</b> (FIG. 06) is really just a reverse proxy with multiple targets per route.</p>
+      <div class="takeaway"><b>Try:</b> route all three requests. Notice the app server never handles images — and the outside world never learns that port 3000 exists.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 21</span><span class="fig-title">nginx routing table</span>
+        <span class="fig-note">one door, many rooms</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <button class="btn btn-chalk proxy-req" data-p="/api/users">GET /api/users</button>
+          <button class="btn btn-chalk proxy-req" data-p="/img/logo.png">GET /img/logo.png</button>
+          <button class="btn btn-chalk proxy-req" data-p="/admin">GET /admin</button>
+        </div>
+        <svg viewBox="0 0 640 240" style="width:100%; height:auto; display:block; margin-bottom:12px;">
+          <g stroke="rgba(168,195,240,.5)" stroke-width="1.5" fill="none">
+            <path id="pw-in" d="M96 120 L 232 120"/>
+            <path id="pw-app" d="M330 96 C 390 60, 420 60, 470 74"/>
+            <path id="pw-static" d="M330 120 L 470 138"/>
+            <path id="pw-admin" d="M330 144 C 390 190, 420 196, 470 196" stroke-dasharray="5 4"/>
+          </g>
+          <g font-family="JetBrains Mono, monospace">
+            <g><rect x="18" y="94" width="78" height="52" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="57" y="116" text-anchor="middle" font-size="15" fill="#e2ecfd">🌍</text>
+              <text x="57" y="136" text-anchor="middle" class="node-label">internet</text></g>
+            <g id="pn-nginx"><rect x="232" y="88" width="98" height="64" rx="9" fill="rgba(10,33,73,.6)" stroke="#ffb224" stroke-width="1.6"/>
+              <text x="281" y="112" text-anchor="middle" font-size="15" fill="#e2ecfd">🚪</text>
+              <text x="281" y="132" text-anchor="middle" class="node-label" fill="#ffb224">nginx :443</text></g>
+            <g id="pn-app"><rect x="470" y="48" width="132" height="48" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="536" y="68" text-anchor="middle" font-size="13" fill="#e2ecfd">⚙️</text>
+              <text x="536" y="86" text-anchor="middle" class="node-label">app :3000</text></g>
+            <g id="pn-static"><rect x="470" y="114" width="132" height="48" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="536" y="134" text-anchor="middle" font-size="13" fill="#e2ecfd">🗂️</text>
+              <text x="536" y="152" text-anchor="middle" class="node-label">/var/www/static</text></g>
+            <g id="pn-admin"><rect x="470" y="176" width="132" height="48" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4" stroke-dasharray="4 3"/>
+              <text x="536" y="196" text-anchor="middle" font-size="13" fill="#e2ecfd">🔒</text>
+              <text x="536" y="214" text-anchor="middle" class="node-label">admin (VPN only)</text></g>
+          </g>
+          <circle id="proxy-packet" r="6" fill="#ffb224" opacity="0" style="filter: drop-shadow(0 0 6px rgba(255,178,36,.9));"/>
+        </svg>
+        <div class="fig-log" id="proxy-log" style="min-height:90px;" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — a production nginx config</summary>
+      <div class="deep-body">
+        <p>The figure's routing table is one real file. This is a lightly-trimmed but production-shaped <code>nginx.conf</code> that terminates TLS, serves static files, and proxies the rest to your app.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">nginx.conf</button>
+          <button class="code-tab" data-lang="go">Caddyfile (simpler)</button>
+        </div>
+<pre class="code is-on" data-lang="node"># /etc/nginx/nginx.conf — the one server the internet talks to
+server {
+  listen 443 ssl http2;
+  server_name api.example.com;
+
+  # 1. terminate TLS here (FIG. 15) — the app never sees certs
+  ssl_certificate     /etc/letsencrypt/live/api.example.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/api.example.com/privkey.pem;
+
+  # 2. serve static assets straight from disk, cached hard
+  location /img/ {
+    root /var/www/static;
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+  }
+
+  # 3. lock the admin panel to the office network
+  location /admin/ { allow 10.0.0.0/8; deny all; proxy_pass http://127.0.0.1:3000; }
+
+  # 4. everything else -> the app (or an upstream {} pool = load balancing)
+  location / {
+    proxy_pass http://127.0.0.1:3000;   # app on a private port
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header Host $host;
+  }
+}
+# redirect plain HTTP to HTTPS
+server { listen 80; server_name api.example.com; return 301 https://$host$request_uri; }</pre>
+<pre class="code" data-lang="go"># Caddyfile — Caddy fetches &amp; auto-renews Let's Encrypt certs for you.
+# This whole file replaces the nginx config on the left.
+api.example.com {
+    # automatic HTTPS — no cert paths, no cron renewals
+
+    handle_path /img/* {
+        root * /var/www/static
+        file_server
+        header Cache-Control "public, max-age=31536000, immutable"
+    }
+
+    @admin path /admin/*
+    handle @admin {
+        @office remote_ip 10.0.0.0/8
+        handle @office { reverse_proxy 127.0.0.1:3000 }
+        respond 403
+    }
+
+    reverse_proxy 127.0.0.1:3000   # everything else -> the app
+}</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes">A reverse proxy also does <b>gzip/brotli compression</b>, adds security headers (<code>HSTS</code>, <code>X-Frame-Options</code>), buffers slow clients, and hides your internal topology. List several backends in an nginx <code>upstream {}</code> block and it becomes a <b>load balancer</b> (FIG. 06). <b>Caddy</b> trades some flexibility for automatic HTTPS and a far shorter config — a great default for new projects.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 22 · DOCKER ============ -->
+<section class="section" id="docker">
+  <div class="wrap lesson flip">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">MODULE 16</div>
+      <h3>Docker: ship the machine, not the code</h3>
+      <p>"Works on my machine" dies here. A <b>Dockerfile</b> describes an environment — OS, runtime, dependencies, your code — and builds it into an <b>image</b>: a stack of read-only layers. A <b>container</b> is that image running, isolated, identical on your laptop, CI, and every server.</p>
+      <p>Because containers start in seconds and are disposable, they're the unit everything else operates on: the load balancer's targets (FIG. 06), the workers behind your queue (FIG. 07), the things Kubernetes herds.</p>
+      <div class="takeaway"><b>Try:</b> build the image layer by layer, then run three containers from it. Same image, same behavior — that's the entire pitch.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 22</span><span class="fig-title">Image layers → running containers</span>
+        <span class="fig-note" id="docker-note">image: not built</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <button class="btn btn-chalk" id="docker-build">▶ BUILD IMAGE</button>
+          <button class="btn btn-chalk" id="docker-run" disabled>RUN CONTAINER</button>
+        </div>
+        <div class="grid-2" style="gap:14px;">
+          <div>
+            <div class="label mono" style="font-size:.68rem; letter-spacing:.1em; color:var(--chalk); text-transform:uppercase; margin-bottom:6px;">Dockerfile → layers</div>
+            <div id="docker-layers" style="display:flex; flex-direction:column-reverse; gap:6px; min-height:170px; justify-content:flex-end;"></div>
+          </div>
+          <div>
+            <div class="label mono" style="font-size:.68rem; letter-spacing:.1em; color:var(--chalk); text-transform:uppercase; margin-bottom:6px;">containers (isolated processes)</div>
+            <div class="cell-row" id="docker-containers" style="align-content:flex-start; min-height:170px;"></div>
+          </div>
+        </div>
+        <div class="fig-log" id="docker-log" style="margin-top:12px; min-height:60px;" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — real Dockerfiles &amp; docker-compose</summary>
+      <div class="deep-body">
+        <p>The layers in the figure come from a Dockerfile. These are <b>multi-stage</b> builds — the pattern that keeps images small and fast — for each runtime, plus the compose file that runs your app, Postgres and Redis together.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Dockerfile (Node)</button>
+          <button class="code-tab" data-lang="go">Dockerfile (Go) + compose</button>
+        </div>
+<pre class="code is-on" data-lang="node"># --- build stage: install deps with the full toolchain ---
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci                 # cached until package.json changes
+COPY . .
+RUN npm run build
+
+# --- run stage: copy only what's needed -> tiny final image ---
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY --from=build /app/dist ./dist
+USER node                  # don't run as root
+EXPOSE 3000
+CMD ["node", "dist/server.js"]
+
+# Order layers cheap-&gt;expensive: deps before code, so a code change
+# doesn't re-install node_modules. Add a .dockerignore (node_modules, .git).</pre>
+<pre class="code" data-lang="go"># --- build stage ---
+FROM golang:1.22-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download        # cached layer
+COPY . .
+RUN CGO_ENABLED=0 go build -o /app ./cmd/server
+
+# --- run stage: a near-empty image with just the binary ---
+FROM gcr.io/distroless/static
+COPY --from=build /app /app
+EXPOSE 3000
+ENTRYPOINT ["/app"]        # final image is a few MB
+
+# docker-compose.yml — the whole stack, one command (`docker compose up`)
+# services:
+#   app:   { build: ., ports: ["3000:3000"], depends_on: [db, redis] }
+#   db:    { image: postgres:16, environment: { POSTGRES_PASSWORD: dev } }
+#   redis: { image: redis:7 }</pre>
+        <h4>Going further</h4>
+        <div class="deep-notes"><b>Multi-stage builds</b> keep the final image tiny (ship the binary/build output, not the compiler). Order layers <b>cheap → expensive</b> so caches survive code changes. <b>Don't run as root</b>, and never bake secrets into the image — pass them as env vars at runtime. <code>docker compose</code> runs your whole stack locally; in production, an orchestrator like <b>Kubernetes</b> or a PaaS (Render, Railway, Fly.io) runs and scales these same images.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 23 · MIGRATIONS ============ -->
+<section class="section" id="migrate">
+  <div class="wrap lesson">
+    <div class="lesson-text reveal">
+      <div class="eyebrow">MODULE 17</div>
+      <h3>Database migrations: version control for schemas</h3>
+      <p>Your code lives in git — but your database schema changes too. <b>Migrations</b> are small, numbered scripts ("add column", "create index") applied in order. The database keeps a <code>schema_migrations</code> table recording exactly which have run, so every environment converges on the same schema.</p>
+      <p>The golden rules: migrations run <em>forward</em> in production (write a new migration to undo a mistake), destructive changes get a backup first, and big tables get indexes built <code>CONCURRENTLY</code> so you don't lock production for an hour.</p>
+      <div class="takeaway"><b>Try:</b> apply all four. V4 drops a column — note the warning ritual. Then roll back and watch the schema and the migrations table stay in sync.</div>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 23</span><span class="fig-title">Migration runner</span>
+        <span class="fig-note" id="migrate-note">version 0 — empty database</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <button class="btn btn-chalk" id="mig-up">▶ MIGRATE UP</button>
+          <button class="btn btn-chalk" id="mig-down">↩ ROLLBACK</button>
+        </div>
+        <div class="grid-2" style="gap:14px;">
+          <div>
+            <div class="label mono" style="font-size:.68rem; letter-spacing:.1em; color:var(--chalk); text-transform:uppercase; margin-bottom:6px;">migrations/</div>
+            <div id="mig-list" style="display:grid; gap:6px;"></div>
+          </div>
+          <div>
+            <div class="label mono" style="font-size:.68rem; letter-spacing:.1em; color:var(--chalk); text-transform:uppercase; margin-bottom:6px;">current schema · users</div>
+            <div class="fig-log" id="mig-schema" style="min-height:150px; max-height:none;"></div>
+          </div>
+        </div>
+        <div class="fig-log" id="mig-log" style="margin-top:12px; min-height:52px;" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-top:none; padding-top:0;">
+  <div class="wrap">
+    <details class="deep">
+      <summary>🔧 Go deeper — migration tools &amp; the safe workflow</summary>
+      <div class="deep-body">
+        <p>Nobody runs migrations by hand. A tool applies numbered files in order and records them. Here are the standard tools and the anatomy of one migration.</p>
+        <div class="code-tabs">
+          <button class="code-tab is-on" data-lang="node">Node.js</button>
+          <button class="code-tab" data-lang="go">Go</button>
+        </div>
+<pre class="code is-on" data-lang="node">// Popular tools: Prisma Migrate, Knex, node-pg-migrate, Drizzle.
+// Each migration is a numbered file with up (apply) and down (undo).
+
+// migrations/003_add_email_index.js
+export const up = (pgm) =&gt; {
+  pgm.addColumn("users", { email: { type: "text" } });
+  pgm.createIndex("users", "email", { unique: true });
+};
+export const down = (pgm) =&gt; {
+  pgm.dropIndex("users", "email");
+  pgm.dropColumn("users", "email");
+};
+
+// Workflow:
+//   npx node-pg-migrate up     # apply pending migrations
+//   npx node-pg-migrate down   # roll back the last one (dev only)
+// Run `up` automatically on deploy, BEFORE the new app version starts.</pre>
+<pre class="code" data-lang="go">// Popular tools: golang-migrate, goose, Atlas.
+// Migrations are plain .sql files, applied in order.
+
+// migrations/003_add_email_index.up.sql
+//   ALTER TABLE users ADD COLUMN email text;
+//   CREATE UNIQUE INDEX CONCURRENTLY idx_users_email ON users(email);
+
+// migrations/003_add_email_index.down.sql
+//   DROP INDEX idx_users_email;
+//   ALTER TABLE users DROP COLUMN email;
+
+// Apply from CI/CD or an init container:
+//   migrate -path ./migrations -database "$DATABASE_URL" up
+
+// golang-migrate keeps a schema_migrations table so each file
+// runs exactly once, and every environment converges on one schema.</pre>
+        <h4>The safe workflow</h4>
+        <div class="deep-notes"><b>Commit migrations with the code that needs them</b> — the schema is versioned alongside git. <b>Run them on deploy, before</b> the new app boots. <b>Back up first</b> for destructive changes, and prefer <b>expand-then-contract</b>: add the new column, deploy code that writes both, backfill, then drop the old column in a later migration — so old and new app versions both work during the rollout. Build big indexes <code>CONCURRENTLY</code> to avoid locking writes.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ FIG 24 · SYSTEM DESIGN ============ -->
+<section class="section" id="sysdesign">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">MODULE 18 · CAPSTONE</div>
+      <h2>System design: assemble everything</h2>
+      <p class="lead">The whiteboard question, played forward. Start with one server, and respond to growth the way real teams do — each move is a module you've already run.</p>
+    </div>
+    <div class="fig reveal">
+      <div class="fig-head">
+        <span class="fig-no">FIG. 24</span><span class="fig-title">Design "linkly" — a URL shortener</span>
+        <span class="fig-note" id="sys-note">stage 0 / 5 · 100 req/s</span>
+      </div>
+      <div class="fig-body">
+        <div class="fig-controls">
+          <button class="btn btn-chalk" id="sys-next">▶ TRAFFIC GROWS — EVOLVE</button>
+          <button class="btn btn-chalk" id="sys-reset">↺ START OVER</button>
+        </div>
+        <svg id="sys-svg" viewBox="0 0 880 320" style="width:100%; height:auto; display:block; margin-bottom:12px;">
+          <g stroke="rgba(168,195,240,.5)" stroke-width="1.5" fill="none">
+            <path id="sw-direct" d="M120 160 L 356 160"/>
+            <path id="sw-lb" class="sys-h" d="M120 160 L 210 160"/>
+            <path id="sw-lb-a1" class="sys-h" d="M290 140 C 320 110, 330 104, 356 100"/>
+            <path id="sw-lb-a2" class="sys-h" d="M290 180 C 320 210, 330 216, 356 220"/>
+            <path id="sw-app-db" d="M470 160 L 600 160"/>
+            <path id="sw-app-cache" class="sys-h" d="M470 116 C 520 70, 545 64, 600 72"/>
+            <path id="sw-app-q" class="sys-h" d="M470 204 C 520 254, 545 258, 600 250"/>
+            <path id="sw-db-replica" class="sys-h" d="M690 160 C 720 160, 730 130, 756 120"/>
+            <path id="sw-q-worker" class="sys-h" d="M690 250 L 756 250"/>
+          </g>
+          <g font-family="JetBrains Mono, monospace">
+            <g><rect x="40" y="134" width="80" height="52" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="80" y="156" text-anchor="middle" font-size="15" fill="#e2ecfd">🌍</text>
+              <text x="80" y="176" text-anchor="middle" class="node-label">users</text></g>
+            <g id="sn-lb" class="sys-h"><rect x="210" y="134" width="80" height="52" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="250" y="156" text-anchor="middle" font-size="14" fill="#e2ecfd">🚦</text>
+              <text x="250" y="176" text-anchor="middle" class="node-label">lb / nginx</text></g>
+            <g id="sn-app1"><rect x="356" y="134" width="114" height="52" rx="9" fill="rgba(10,33,73,.6)" stroke="#ffb224" stroke-width="1.6"/>
+              <text x="413" y="156" text-anchor="middle" font-size="14" fill="#e2ecfd">⚙️</text>
+              <text x="413" y="176" text-anchor="middle" class="node-label" fill="#ffb224">app (container)</text></g>
+            <g id="sn-app2" class="sys-h"><rect x="356" y="74" width="114" height="46" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="413" y="93" text-anchor="middle" font-size="12" fill="#e2ecfd">⚙️</text>
+              <text x="413" y="110" text-anchor="middle" class="node-label">app ×2</text></g>
+            <g id="sn-app3" class="sys-h"><rect x="356" y="200" width="114" height="46" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="413" y="219" text-anchor="middle" font-size="12" fill="#e2ecfd">⚙️</text>
+              <text x="413" y="236" text-anchor="middle" class="node-label">app ×3</text></g>
+            <g id="sn-cache" class="sys-h"><rect x="600" y="48" width="100" height="48" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="650" y="68" text-anchor="middle" font-size="13" fill="#e2ecfd">⚡</text>
+              <text x="650" y="86" text-anchor="middle" class="node-label">redis cache</text></g>
+            <g id="sn-db"><rect x="600" y="134" width="90" height="52" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="645" y="156" text-anchor="middle" font-size="14" fill="#e2ecfd">🗄️</text>
+              <text x="645" y="176" text-anchor="middle" class="node-label">postgres</text></g>
+            <g id="sn-replica" class="sys-h"><rect x="756" y="96" width="100" height="48" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4" stroke-dasharray="4 3"/>
+              <text x="806" y="116" text-anchor="middle" font-size="13" fill="#e2ecfd">🗄️</text>
+              <text x="806" y="134" text-anchor="middle" class="node-label">read replica</text></g>
+            <g id="sn-queue" class="sys-h"><rect x="600" y="226" width="90" height="48" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="645" y="246" text-anchor="middle" font-size="13" fill="#e2ecfd">📬</text>
+              <text x="645" y="264" text-anchor="middle" class="node-label">queue</text></g>
+            <g id="sn-worker" class="sys-h"><rect x="756" y="226" width="100" height="48" rx="9" fill="rgba(10,33,73,.6)" stroke="#a8c3f0" stroke-width="1.4"/>
+              <text x="806" y="246" text-anchor="middle" font-size="13" fill="#e2ecfd">🔨</text>
+              <text x="806" y="264" text-anchor="middle" class="node-label">workers</text></g>
+          </g>
+        </svg>
+        <div class="fig-log" id="sys-log" style="min-height:110px; max-height:none;" aria-live="polite"></div>
+      </div>
+    </div>
+    <details class="deep" style="margin-top:30px;">
+      <summary>🔧 Go deeper — how to answer a system-design interview</summary>
+      <div class="deep-body">
+        <p>There's no snippet here — system design is about <em>reasoning out loud</em>, not code. Here's the framework interviewers actually score, mapped to the modules you've run.</p>
+        <h4>1 · Clarify &amp; estimate (5 min)</h4>
+        <div class="deep-notes">Pin the scope: which features, read-heavy or write-heavy, how many users? Do rough math: "10M users, ~100 reads/sec average, ~10× at peak". These numbers justify every later decision — never skip them.</div>
+        <h4>2 · Draw the happy path</h4>
+        <div class="deep-notes">Start with the boring version: client → <b>load balancer</b> → <b>stateless app</b> → <b>database</b>. This is Stage 0–1 of the figure. Say the API shape out loud (<code>POST /urls</code>, <code>GET /{code}</code>).</div>
+        <h4>3 · Find the bottleneck, then add ONE box</h4>
+        <div class="deep-notes">Reads dominate? Add a <b>cache</b> (Redis) and <b>read replicas</b>. Slow side-work? A <b>queue</b> + workers. Too much data for one machine? <b>Sharding</b>. Each addition should name the specific pain it removes — exactly the stage-by-stage evolution in FIG. 24.</div>
+        <h4>4 · Name the trade-offs</h4>
+        <div class="deep-notes">Show you know the costs: caches go <b>stale</b> (invalidation is hard), replicas have <b>lag</b>, queues make work <b>eventually consistent</b>, sharding complicates joins. Mentioning the downside of your own choice is what separates senior answers.</div>
+        <h4>5 · Talk reliability &amp; scale numbers</h4>
+        <div class="deep-notes">Close with the operational layer: health checks &amp; failover, rate limiting, monitoring the <b>p99 latency</b> and <b>queue depth</b>, and how you'd handle 10× growth. Every one of these is a module on this site.</div>
+        <p style="margin-top:1.2em;"><b>The one-line version:</b> start simple, grow only in response to a named bottleneck, and always say the trade-off. If you can narrate FIG. 24 from one server to spike-proof and explain <em>why</em> at each step, you can pass this interview.</p>
+      </div>
+    </details>
+
+    <p style="margin-top:26px;" class="reveal">That's the full blueprint. Prove it in the <a href="game.html"><b>arcade →</b></a></p>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap">
+    <span>Backend Blueprint — an open, static site. No servers were harmed (they're simulated).</span>
+    <span class="mono">SHEET REV <span data-year></span> · BUILT FOR GITHUB PAGES</span>
+  </div>
+</footer>
+
+<script src="js/common.js"></script>
+<script src="js/advanced.js"></script>
+</body>
+</html>

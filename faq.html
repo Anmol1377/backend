@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ — Backend Blueprint</title>
+<meta name="description" content="Honest answers to the questions every new backend developer asks: languages, DSA, databases, deployment, and how to practice.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230f2e66'/><circle cx='9' cy='16' r='3.4' fill='%23ffb224'/><circle cx='23' cy='9' r='3' fill='none' stroke='%23a8c3f0' stroke-width='2'/><circle cx='23' cy='23' r='3' fill='none' stroke='%23a8c3f0' stroke-width='2'/><path d='M12 15l8-5M12 17l8 5' stroke='%23a8c3f0' stroke-width='2'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">
+        <svg width="18" height="18" viewBox="0 0 32 32"><circle cx="9" cy="16" r="3.4" fill="#ffb224"/><circle cx="23" cy="9" r="3" fill="none" stroke="#a8c3f0" stroke-width="2"/><circle cx="23" cy="23" r="3" fill="none" stroke="#a8c3f0" stroke-width="2"/><path d="M12 15l8-5M12 17l8 5" stroke="#a8c3f0" stroke-width="2"/></svg>
+      </span>
+      <span>Backend Blueprint<small>learn it by watching it run</small></span>
+    </a>
+    <button class="nav-toggle" aria-label="Menu">MENU</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="learn.html">Backend Core</a>
+      <a href="dsa.html">DSA for Backend</a>
+      <a href="advanced.html">Security &amp; Ops</a>
+      <a href="game.html">Arcade</a>
+      <a href="faq.html">FAQ</a>
+    </div>
+    <span class="nav-progress" data-nav-progress></span>
+  </div>
+</nav>
+
+<header class="section" style="padding-bottom:24px;">
+  <div class="wrap">
+    <div class="eyebrow">APPENDIX A · FREQUENTLY ASKED</div>
+    <h1>Questions every backend<br>beginner actually asks</h1>
+    <p class="lead">Straight answers, no gatekeeping. Type to filter.</p>
+    <input class="faq-search" id="faq-search" type="search" placeholder="search… e.g. 'language', 'sql', 'deploy'" style="margin-top:18px; max-width:520px;">
+  </div>
+</header>
+
+<section class="section" style="padding-top:24px;">
+  <div class="wrap"><div id="faq-list" style="max-width:800px;">
+
+    <div class="faq-cat">Getting started</div>
+
+    <details class="faq-item">
+      <summary>What exactly is "the backend"?</summary>
+      <div class="faq-a"><p>Everything that runs on computers you don't see: the servers that receive requests, the code that enforces rules ("is this password right?", "is this seat still free?"), and the databases that remember it all. The frontend is the restaurant's dining room; the backend is the kitchen, the pantry and the ordering system. FIG. 01 on the <a href="index.html">home page</a> shows one order moving through that kitchen.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Which language should I learn first for backend?</summary>
+      <div class="faq-a"><p>Pick one and stop worrying — the concepts on this site transfer to all of them. Sensible first picks: <b>JavaScript/Node.js</b> (one language for front and back), <b>Python</b> (gentlest syntax, huge ecosystem), or <b>Go</b> (simple, fast, built for servers). Java and C# dominate large companies.</p><p>The trap is switching languages every month. HTTP, databases, caching and queues are the career; the language is just the accent you speak them in.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Do I need to be good at math?</summary>
+      <div class="faq-a"><p>No. You need logic and patience, not calculus. The closest thing to math you'll use daily is Big-O reasoning (FIG. 10) — which is really just "will this get slow when the data grows?" — and back-of-envelope estimates like "1M requests/day ≈ 12/second".</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Frontend first or backend first?</summary>
+      <div class="faq-a"><p>Either works; people succeed both ways. Backend-first suits you if you like logic, data and systems more than visuals. You can build and test entire backends with just a terminal and tools like <code>curl</code> or Postman — no CSS required. (This site is, ironically, a frontend. We appreciate the irony.)</p></div>
+    </details>
+
+    <div class="faq-cat">Concepts</div>
+
+    <details class="faq-item">
+      <summary>What's the difference between an API and a backend?</summary>
+      <div class="faq-a"><p>The backend is the whole kitchen; the API is the serving window. An API (Application Programming Interface) is the defined set of URLs, methods and formats through which the outside world may talk to your backend — like <code>GET /users/42</code> in FIG. 02. Backend = implementation, API = contract.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary>REST vs GraphQL — which one should I learn?</summary>
+      <div class="faq-a"><p>REST first, always. It's simpler, it's the majority of real-world APIs, and it teaches HTTP properly. GraphQL solves a specific problem — clients needing flexible queries without dozens of endpoints — and it's much easier to appreciate after you've felt that pain in REST.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary>SQL or NoSQL — which database do I start with?</summary>
+      <div class="faq-a"><p><b>SQL (PostgreSQL is the default choice)</b>. Relational databases + SQL are the single most transferable backend skill: 50 years old and still running banks, hospitals and startups. NoSQL stores (MongoDB, Redis, DynamoDB) are specialized tools you add <em>when a specific problem calls for them</em> — Redis, for instance, is essentially FIG. 05 and FIG. 11 as a product.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary>What is "state", and why does everyone say HTTP is stateless?</summary>
+      <div class="faq-a"><p>State is anything the system remembers. HTTP itself remembers nothing between requests — each one arrives as a stranger. So backends bolt memory on: cookies and sessions (server remembers you) or JWTs (you carry the proof yourself — FIG. 08). "Stateless services" are prized because any server can handle any request, which is what makes FIG. 06's load balancing trivially easy.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary>What actually happens when I type a URL and press Enter?</summary>
+      <div class="faq-a"><p>The favorite interview question of all time. Short version: DNS turns the name into an IP → TCP + TLS open a secure pipe → your browser sends an HTTP request → a load balancer picks a server → the server checks auth, cache, then the database → a response streams back and renders. Long version: press ▶ on FIG. 01 and read the log lines.</p></div>
+    </details>
+
+    <div class="faq-cat">DSA &amp; interviews</div>
+
+    <details class="faq-item">
+      <summary>How much DSA do I really need for backend work?</summary>
+      <div class="faq-a"><p>For <em>building</em>: the five ideas on the <a href="dsa.html">DSA page</a> — hash tables, trees, stacks, queues, Big-O — because they're inside every tool you'll use. For <em>interviews at big tech</em>: more grinding is sadly real (arrays, strings, two pointers, BFS/DFS, dynamic programming basics). But learn the five first; they make the grind meaningful instead of ritualistic.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary>What is a "system design interview" and when do I care?</summary>
+      <div class="faq-a"><p>It's being asked to draw FIG. 01 for a real product: "design Instagram's feed" or "design a URL shortener". You sketch load balancers, caches, queues, databases and their trade-offs — literally the modules of this site composed together. Junior roles rarely require it; it becomes the main event for senior roles. Every figure here is a future whiteboard box.</p></div>
+    </details>
+
+    <div class="faq-cat">Practice &amp; shipping</div>
+
+    <details class="faq-item">
+      <summary>What should I build first?</summary>
+      <div class="faq-a"><p>The classic ladder, each rung adding one new concept:</p><p>1) A <b>to-do API</b> — CRUD, routes, JSON. 2) Add a <b>database</b> — persistence, migrations. 3) Add <b>auth</b> — registration, login, JWTs. 4) A <b>URL shortener</b> — redirects, an index, your first cache. 5) A <b>chat or notification service</b> — queues and websockets. By rung 5 you've personally implemented FIGS. 02–08.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary>How do I put a backend on the internet without spending money?</summary>
+      <div class="faq-a"><p>Free tiers cover your whole learning phase: <b>Render</b>, <b>Railway</b> or <b>Fly.io</b> for the app; <b>Neon</b> or <b>Supabase</b> for a Postgres database; <b>Upstash</b> for Redis. (Static sites like this one ride free forever on GitHub Pages.) The skill of deploying — env vars, logs, "works on my machine" archaeology — teaches as much as the code does.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary>How long until I'm employable?</summary>
+      <div class="faq-a"><p>Honest range: <b>6–18 months</b> of consistent building (not consistent video-watching). The portfolio that gets interviews is 2–3 deployed projects with README files that explain the <em>decisions</em> — "I added a queue because emails blocked signup" is worth more than any certificate.</p></div>
+    </details>
+
+    <div class="faq-cat">This site</div>
+
+    <details class="faq-item">
+      <summary>Are these visualizations how it really works?</summary>
+      <div class="faq-a"><p>They're honest miniatures. Every mechanism is real — LRU eviction, round-robin routing, backpressure, HMAC verification, B-tree-ish search — but real systems add layers we hide: TLS handshakes, connection pools, retries, monitoring. The figures say "NOT TO SCALE" and mean it. The shapes, however, are exactly the shapes.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Where does my progress and high score live?</summary>
+      <div class="faq-a"><p>In your browser's <code>localStorage</code> — a small key-value store, i.e. a tiny cousin of the hash table in FIG. 11. Nothing leaves your machine; this site has no backend of its own (it's a static site — servers are simulated). Clear your browser data and the scores reset.</p></div>
+    </details>
+
+    <div id="faq-empty" style="display:none; color:var(--muted); padding:24px 0;">No questions match — try a shorter word, or <a href="https://www.google.com" rel="noopener">the wider internet</a>.</div>
+  </div></div>
+</section>
+
+<footer class="footer">
+  <div class="wrap">
+    <span>Backend Blueprint — an open, static site. No servers were harmed (they're simulated).</span>
+    <span class="mono">SHEET REV <span data-year></span> · BUILT FOR GITHUB PAGES</span>
+  </div>
+</footer>
+
+<script src="js/common.js"></script>
+<script>
+  // FAQ filter
+  (function () {
+    const input = document.getElementById("faq-search");
+    const items = Array.prototype.slice.call(document.querySelectorAll(".faq-item"));
+    const cats = Array.prototype.slice.call(document.querySelectorAll(".faq-cat"));
+    const empty = document.getElementById("faq-empty");
+    let marked = false;
+    input.addEventListener("input", function () {
+      if (!marked) { BB.mark("faq"); marked = true; }
+      const q = input.value.trim().toLowerCase();
+      let visible = 0;
+      items.forEach(function (it) {
+        const show = !q || it.textContent.toLowerCase().indexOf(q) !== -1;
+        it.style.display = show ? "" : "none";
+        if (show) visible++;
+      });
+      cats.forEach(function (c) {
+        // hide a category header if everything until the next header is hidden
+        let el = c.nextElementSibling, any = false;
+        while (el && !el.classList.contains("faq-cat")) {
+          if (el.classList.contains("faq-item") && el.style.display !== "none") any = true;
+          el = el.nextElementSibling;
+        }
+        c.style.display = any ? "" : "none";
+      });
+      empty.style.display = visible ? "none" : "";
+    });
+  })();
+</script>
+</body>
+</html>
