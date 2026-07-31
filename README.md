@@ -2,7 +2,11 @@
 
 **Learn the backend by watching it run.**
 
-An interactive, zero-dependency static website that teaches backend engineering through living blueprint-style visualizations, games, and honest FAQs. Every concept is a schematic you can run, break and replay.
+### ▶ Live site: **https://anmol1377.github.io/backend/**
+
+An interactive, zero-dependency static website that teaches backend engineering through living blueprint-style visualizations, games, and honest FAQs. Every concept is a schematic you can run, break and replay — and every module has a tabbed **Node.js & Go** code deep-dive.
+
+**24 interactive figures** across three parts — Backend Core, DSA for Backend, and Security & Ops — plus an arcade and a searchable FAQ. No frameworks, no build step, no tracking: progress and high scores live in your browser's `localStorage`.
 
 ## What's inside
 
@@ -31,27 +35,21 @@ python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
-## Publish on GitHub Pages
+## Deployment
 
-1. Create a new repository on GitHub (e.g. `backend-blueprint`).
-2. From this folder:
+This repo is already deployed with **GitHub Pages** (Deploy from a branch → `main` → `/root`):
 
-   ```bash
-   git init
-   git add .
-   git commit -m "Backend Blueprint: interactive backend learning site"
-   git branch -M main
-   git remote add origin https://github.com/<your-username>/backend-blueprint.git
-   git push -u origin main
-   ```
+> **https://anmol1377.github.io/backend/**
 
-3. On GitHub: **Settings → Pages → Build and deployment**
-   - Source: *Deploy from a branch*
-   - Branch: `main`, folder `/ (root)` → **Save**
-4. Wait ~1 minute. Your site is live at
-   `https://<your-username>.github.io/backend-blueprint/`
+To update the live site, just push to `main`:
 
-All links are relative, so it works from any repo name or subpath. The `.nojekyll` file tells GitHub Pages to serve files as-is.
+```bash
+git add -A
+git commit -m "your message"
+git push
+```
+
+Pages rebuilds automatically in ~1 minute. All links are relative, so the site works from any repo name or subpath, and the `.nojekyll` file tells GitHub Pages to serve the files as-is (no Jekyll processing).
 
 ## Progress & scores
 
